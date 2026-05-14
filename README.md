@@ -15,12 +15,13 @@ Alessandro LEITE
 ## Architecture du repository
 ```
 |-- notebooks/
+|    |-- Essais/          # contient des essais que nous ne voulions pas pour autant supprimer
+|    |
 |    |-- ExplorationDonnees/
 |    |    |-- Global/
 |    |    |    |-- AnalyseProduit.ipynb
-|    |    |    |-- ForecastingVentes.ipynb
 |    |    |    |-- SaisonaliteTendances.ipynb
-|    |    |    |-- ExplorationDonnees.ipynb
+|    |    |    |-- AnalyseGlobale.ipynb
 |    |    |
 |    |    |-- Magasins/
 |    |    |-- Produits/
@@ -54,10 +55,9 @@ Alessandro LEITE
 [A compléter]
 | Notebooks | Partie de rapport |
 |:-------- |--------:|
+| AnalyseGlobale.ipynb | Rapport mi-projet - partie 7.1 |
 | AnalyseProduit.ipynb | Rapport mi-projet - partie 7.2 |
-| ForecastingVentes.ipynb | Essai de forecasting |
 | SaisonaliteTendances.ipynb | Rapport mi-projet - partie 7.4 |
-| ExplorationDonnees.ipynb | Rapport mi-projet - partie 7.1 |
 | ModelePrevisionDemandeRegressionFinal.ipynb | Rapport final - partie 5.2 |
 | ModelePrevisionDemandeClassificationFinal.ipynb | Rapport final - partie 5.3 |
 
