@@ -52,6 +52,14 @@ Alessandro LEITE
 
 ## Correspondance notebooks / rapports
 [A compléter]
+| Notebooks | Partie de rapport |
+|:-------- |--------:|
+| AnalyseProduit.ipynb | Rapport mi-projet - partie 7.2 |
+| ForecastingVentes.ipynb | Essai de forecasting |
+| SaisonaliteTendances.ipynb | Rapport mi-projet - partie 7.4 |
+| ExplorationDonnees.ipynb | Rapport mi-projet - partie 7.1 |
+| ModelePrevisionDemandeRegressionFinal.ipynb | Rapport final - partie 5.2 |
+| ModelePrevisionDemandeClassificationFinal.ipynb | Rapport final - partie 5.3 |
 
 ## Dataset
 Le dataset étant trop lourd, nous l'avons chacune enregistré en local dans nos ordinateur. Il est disponible à l'adresse : [https://www.kaggle.com/competitions/m5-forecasting-accuracy]
