@@ -13,7 +13,7 @@ Marie-Noëlle ANTON-GEOFFRY
 Alessandro LEITE
 
 ## Architecture du repository
-'''
+``
 |-- notebooks/
 |    |-- ExplorationDonnees/
 |    |    |-- Global/
@@ -48,7 +48,7 @@ Alessandro LEITE
 |    |    |-- 3_Page_Produits.py
 |
 |-- README.md
-'''
+``
 
 ## Correspondance notebooks / rapports
 [A compléter]
@@ -58,7 +58,7 @@ Le dataset étant trop lourd, nous l'avons chacune enregistré en local dans nos
 Les fichiers nécessaires au lancement de l'application sont néanmoins enregistrés dans le repository, dans les dossiers avec les notebooks correspondants.
 
 ## Lancer l'application
-'''
+``
 cd interface
 streamlit run app.py
-'''
+``
