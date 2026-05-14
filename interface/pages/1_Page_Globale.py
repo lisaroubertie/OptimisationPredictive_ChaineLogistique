@@ -31,17 +31,17 @@ echelle = st.sidebar.radio("Echelle des graphiques", ["Linéaire", "Logarithmiqu
 
 # Chargement des fichiers
 
-daily = pd.read_csv("../Modeles/Global/daily_regression.csv") # pour la courbe historique
-derniers_28 = pd.read_csv("../Modeles/Global/28derniersjours_regression.csv")
+daily = pd.read_csv("../notebook/Modeles/Global/daily_regression.csv") # pour la courbe historique
+derniers_28 = pd.read_csv("../notebook/Modeles/Global/28derniersjours_regression.csv")
 daily["date"] = pd.to_datetime(daily["date"])
 derniers_28["date"] = pd.to_datetime(derniers_28["date"])
 
-modele_regression = joblib.load("../Modeles/Global/modele_regression.pkl")
-modele_classification = joblib.load("../Modeles/Global/modele_classification.pkl")
+modele_regression = joblib.load("../notebook/Modeles/Global/modele_regression.pkl")
+modele_classification = joblib.load("../notebook/Modeles/Global/modele_classification.pkl")
 
-features = joblib.load("../Modeles/Global/features_regression.pkl")
-seuil_pic = joblib.load("../Modeles/Global/seuil_pic_classification.pkl")
-rmse = joblib.load("../Modeles/Global/rmse_regression.pkl") # pour l'interval de confiance
+features = joblib.load("../notebook/Modeles/Global/features_regression.pkl")
+seuil_pic = joblib.load("../notebook/Modeles/Global/seuil_pic_classification.pkl")
+rmse = joblib.load("../notebook/Modeles/Global/rmse_regression.pkl") # pour l'interval de confiance
 
 
 
