@@ -5,15 +5,15 @@ Ce projet a pour objectif de prédire la demande et détecter les ruptures de st
 Notre rendu final est une application Streamlit combinant régression et classification à l'échelle globale, puis plus spécifique en analysant les magasins et les produits.
 
 ## Etudiantes
-Lisa ROUBERTIE
-Maëlys BOUAZZA
-Marie-Noëlle ANTON-GEOFFRY
+- Lisa ROUBERTIE
+- Maëlys BOUAZZA
+- Marie-Noëlle ANTON-GEOFFRY
 
 ## Référent de projet
 Alessandro LEITE
 
 ## Architecture du repository
-``
+```
 |-- notebooks/
 |    |-- ExplorationDonnees/
 |    |    |-- Global/
@@ -48,7 +48,7 @@ Alessandro LEITE
 |    |    |-- 3_Page_Produits.py
 |
 |-- README.md
-``
+```
 
 ## Correspondance notebooks / rapports
 [A compléter]
@@ -58,7 +58,7 @@ Le dataset étant trop lourd, nous l'avons chacune enregistré en local dans nos
 Les fichiers nécessaires au lancement de l'application sont néanmoins enregistrés dans le repository, dans les dossiers avec les notebooks correspondants.
 
 ## Lancer l'application
-``
+```bash
 cd interface
 streamlit run app.py
-``
+```
