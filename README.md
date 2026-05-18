@@ -1,16 +1,20 @@
 # Projet Ingé2 - Optimisation prédictive de la chaine logistique en intégrant l'apprentissage automatique et la recherche opérationnelle
 
+
 ## Description
 Ce projet a pour objectif de prédire la demande et détecter les ruptures de stocks à partir du dataset M5 (Walmart).
 Notre rendu final est une application Streamlit combinant régression et classification à l'échelle globale, puis plus spécifique en analysant les magasins et les produits.
+
 
 ## Etudiantes
 - Lisa ROUBERTIE
 - Maëlys BOUAZZA
 - Marie-Noëlle ANTON-GEOFFRY
 
+
 ## Référent de projet
 Alessandro LEITE
+
 
 ## Architecture du repository
 ```
@@ -61,6 +65,7 @@ Alessandro LEITE
 |-- README.md
 ```
 
+
 ## Correspondance notebooks / rapports
 
 ### Partie globale
@@ -72,12 +77,14 @@ Alessandro LEITE
 | ModelePrevisionDemandeRegressionFinal.ipynb | Rapport final - partie 6.2 |
 | ModelePrevisionDemandeClassificationFinal.ipynb | Rapport final - partie 6.3 |
 
+
 ### Partie par magasins
 [A compléter avec les notebooks de modélisation]
 | Notebooks | Partie de rapport |
 |:-------- |--------:|
 | Comparaison exploration par magasin VS général.ipynb | Rapport mi-projet - partie 7.3 |
 | Exploration données ventes PAR MAGASIN.ipynb | Rapport mi-projet - partie 7.3 |
+
 
 ### Partie par produit
 [A compléter avec les notebooks de modélisation]
@@ -88,7 +95,9 @@ Alessandro LEITE
 
 ## Dataset
 Le dataset étant trop lourd, nous l'avons chacune enregistré en local dans nos ordinateur (chemin : OptimisationPredictive_ChaineLogistique/datas). Il est disponible à l'adresse : [https://www.kaggle.com/competitions/m5-forecasting-accuracy]
+
 Les fichiers nécessaires au lancement de l'application (.pkl et .csv) sont néanmoins enregistrés dans le repository avec les notebooks correspondants, pour que l'application puisse tourner sans relancer les modèles.
+
 
 ## Lancer l'application
 ```bash
