@@ -25,7 +25,7 @@ Alessandro LEITE
 |    |
 |    |-- ExplorationDonnees/
 |    |    |-- Global/
-|    |    |    |-- AnalyseProduit.ipynb
+|    |    |    |-- AnalyseProduitsCategories.ipynb
 |    |    |    |-- SaisonaliteTendances.ipynb
 |    |    |    |-- AnalyseGlobale.ipynb
 |    |    |
@@ -72,7 +72,7 @@ Alessandro LEITE
 | Notebooks | Partie de rapport |
 |:-------- |--------:|
 | AnalyseGlobale.ipynb | Rapport mi-projet - partie 7.1 |
-| AnalyseProduit.ipynb | Rapport mi-projet - partie 7.2 |
+| AnalyseProduitsCategories.ipynb | Rapport mi-projet - partie 7.2 |
 | SaisonaliteTendances.ipynb | Rapport mi-projet - partie 7.4 |
 | ModelePrevisionDemandeRegressionFinal.ipynb | Rapport final - partie 6.2 |
 | ModelePrevisionDemandeClassificationFinal.ipynb | Rapport final - partie 6.3 |
