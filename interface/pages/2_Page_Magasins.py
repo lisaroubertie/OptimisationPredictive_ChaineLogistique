@@ -38,9 +38,8 @@ vue = st.radio(
     ["Ventes réelles vs prédites", "Prévision future", "MAE par magasin", "Alertes événements"]
 )
 
-
 # VUE 1 : RÉEL VS PRÉDIT
-
+# Permet de valider visuellement la qualité du modèle sur la période de test
 if vue == "Ventes réelles vs prédites":
     st.subheader(f"Ventes réelles vs prédites — {store}")
 
@@ -58,7 +57,7 @@ if vue == "Ventes réelles vs prédites":
 
     st.metric(f"MAE pour {store}", f"{mae_par_magasin[store]}")
 
-    # Détail par produit
+    # Détail par produit dans le magasin sélectionné
     st.subheader(f"Détail par produit — {store}")
     produits = sorted(test[test['store_id'] == store]['item_id'].unique())
     produit  = st.selectbox("Choisir un produit", produits)
@@ -76,9 +75,15 @@ if vue == "Ventes réelles vs prédites":
 
 # VUE 2 : PRÉVISION FUTURE
 # Prédiction récursive sur les top 50 produits du magasin
-
+# On prédit jour par jour en utilisant la prédiction précédente comme lag
 elif vue == "Prévision future":
     st.subheader(f"Prévision des {horizon} prochains jours — {store}")
+
+    if horizon > 7:
+        erreur_estimee = round(0.102 * np.sqrt(horizon), 2)
+        st.warning(f"Au-delà de 7 jours la précision diminue progressivement. "
+                   f"Sur {horizon} jours l'erreur accumulée estimée est d'environ "
+                   f"{erreur_estimee} unités par produit par jour.")
 
     store_df  = df_long[df_long['store_id'] == store].copy()
     last_date = store_df['date'].max()
@@ -116,9 +121,13 @@ elif vue == "Prévision future":
             last_row['month']     = next_date.month
             last_row['event_enc'] = 0
 
+            # Recalcul des lags depuis les données disponibles
+            if len(current) >= 1:
+                last_row['lag_1'] = current['sales'].iloc[-1]
             if len(current) >= 7:
                 last_row['lag_7']          = current['sales'].iloc[-7]
                 last_row['rolling_mean_7'] = current['sales'].iloc[-7:].mean()
+                last_row['rolling_std_7']  = current['sales'].iloc[-7:].std()
             if len(current) >= 28:
                 last_row['lag_28'] = current['sales'].iloc[-28]
 
@@ -191,17 +200,17 @@ elif vue == "Prévision future":
         columns={'date': 'Date', 'prediction': 'Prévision ventes'}
     ).round(0))
 
-
 # VUE 3 : MAE PAR MAGASIN
-
+# Compare la précision du modèle entre tous les magasins
 elif vue == "MAE par magasin":
-    st.subheader("MAE par magasin — plus c'est bas mieux c'est prédit")
+    st.subheader("MAE par magasin ( bonne prédiction si bas )")
 
     df_mae         = mae_par_magasin.reset_index()
     df_mae.columns = ['Magasin', 'MAE']
     df_mae         = df_mae.sort_values('MAE')
 
     fig, ax = plt.subplots(figsize=(10, 4))
+    # Rouge pour le magasin sélectionné, bleu pour les autres
     colors  = ['red' if s == store else 'steelblue' for s in df_mae['Magasin']]
     ax.bar(df_mae['Magasin'], df_mae['MAE'], color=colors, edgecolor='black')
     ax.set_ylabel("MAE")
@@ -211,9 +220,10 @@ elif vue == "MAE par magasin":
     st.metric(f"MAE pour {store}", f"{mae_par_magasin[store]}")
 
 # VUE 4 : ALERTES ÉVÉNEMENTS
-
+# Impacts calculés depuis l'exploration des données
+# Vert = hausse des ventes, Rouge = baisse des ventes
 elif vue == "Alertes événements":
-    st.subheader("Événements à venir — mai/juin 2016")
+    st.subheader("Événements à venir - mai/juin 2016")
 
     # Moyenne des ventes journalières du magasin
     store_recent        = df_long[df_long['store_id'] == store].copy()
@@ -229,7 +239,7 @@ elif vue == "Alertes événements":
                 "TX_1": 29,  "TX_2": 22,  "TX_3": 25,
                 "WI_1": -25, "WI_2": -35, "WI_3": -33
             },
-            "action": "Vérifier le comportement historique — impact très variable selon le magasin"
+            "action": "Vérifier le comportement historique - impact très variable selon le magasin"
         },
         "Father's day": {
             "date"  : "2016-06-19",
@@ -258,11 +268,11 @@ elif vue == "Alertes événements":
             )
         else:
             st.error(
-                f"**{event}** le {info['date']} → "
+                f"**{event}** le {info['date']} : "
                 f"Baisse prévue pour {store} : **{impact_pct}%** "
                 f"soit environ **-{unites_supplementaires} unités** ce jour-là"
             )
             st.info(
-                f"Recommandation : Ne pas sur-stocker — "
+                f"Recommandation : Ne pas sur-stocker --> "
                 f"Réduire les commandes d'environ **{unites_supplementaires} unités**"
             )
