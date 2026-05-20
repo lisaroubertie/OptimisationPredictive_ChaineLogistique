@@ -38,11 +38,10 @@ vue = st.radio(
 
 # VUE 1 : RÉEL VS PRÉDIT
 if vue == "Ventes réelles vs prédites":
-    st.subheader(f"Ventes réelles vs prédites — {store}")
+    st.subheader(f"Ventes réelles vs prédites : {store}")
 
     store_data = test[test['store_id'] == store].groupby('date')[['sales', 'prediction']].sum().reset_index()
 
-    # Métriques en haut
     c1, c2, c3 = st.columns(3)
     c1.metric("Ventes réelles moyennes / jour", f"{store_data['sales'].mean():.0f}")
     c2.metric("Maximum historique",             f"{store_data['sales'].max():.0f}")
@@ -57,25 +56,11 @@ if vue == "Ventes réelles vs prédites":
     ax.grid(True, alpha=0.3)
     st.pyplot(fig)
 
-    # Détail par produit
-    st.subheader(f"Détail par produit — {store}")
-    produits = sorted(test[test['store_id'] == store]['item_id'].unique())
-    produit  = st.selectbox("Choisir un produit", produits)
-
-    produit_data = test[(test['store_id'] == store) & (test['item_id'] == produit)]
-
-    fig2, ax2 = plt.subplots(figsize=(12, 4))
-    ax2.plot(produit_data['date'], produit_data['sales'],      label='Réel',   color='black',     linewidth=2)
-    ax2.plot(produit_data['date'], produit_data['prediction'], label='Prédit', color='steelblue', linestyle='--')
-    ax2.set_xlabel("Date")
-    ax2.set_ylabel("Ventes")
-    ax2.legend()
-    ax2.grid(True, alpha=0.3)
-    st.pyplot(fig2)
+    st.caption("Période de test : 30 avril au 8 mai 2016 - 4 dates disponibles dans le dataset")
 
 # VUE 2 : PRÉVISION FUTURE
 elif vue == "Prévision future":
-    st.subheader(f"Prévision des {horizon} prochains jours — {store}")
+    st.subheader(f"Prévision des {horizon} prochains jours : {store}")
 
     if horizon > 7:
         erreur_estimee = round(0.102 * np.sqrt(horizon), 2)
@@ -144,7 +129,6 @@ elif vue == "Prévision future":
     df_pred    = pd.DataFrame(all_predictions)
     daily_pred = df_pred.groupby('date')['prediction'].sum().reset_index()
 
-    # Métriques en haut
     c1, c2, c3 = st.columns(3)
     c1.metric("Ventes prévues totales sur la période", f"{daily_pred['prediction'].sum():.0f}")
     c2.metric("Pic prévu",                             f"{daily_pred['prediction'].max():.0f}")
@@ -152,30 +136,22 @@ elif vue == "Prévision future":
 
     st.subheader("Total magasin (top 50 produits)")
 
-    # Historique des 28 derniers jours + prévisions sur le même graphe
     store_hist = df_long[df_long['store_id'] == store].copy()
     store_hist = store_hist[store_hist['item_id'].isin(top50_produits)]
     hist_28    = store_hist.groupby('date')['sales'].sum().reset_index().tail(28)
 
     fig, ax = plt.subplots(figsize=(12, 4))
-
-    # Historique
     ax.plot(hist_28['date'], hist_28['sales'],
             label='Historique', color='black', linewidth=2)
-
-    # Prévisions
     ax.plot(daily_pred['date'], daily_pred['prediction'],
             marker='o', color='steelblue', linewidth=2, label='Prévision', linestyle='--')
 
-    # Intervalle de confiance qui s'élargit avec le temps
     rmse_total = mae_global * 50
     haut = daily_pred['prediction'] + rmse_total * np.sqrt(np.arange(1, len(daily_pred) + 1))
     bas  = (daily_pred['prediction'] - rmse_total * np.sqrt(np.arange(1, len(daily_pred) + 1))).clip(0)
     ax.fill_between(daily_pred['date'], bas, haut, alpha=0.2, label='Intervalle de confiance')
 
-    # Ligne de séparation passé / futur
-    ax.axvline(x=last_date, color='red', linestyle=':', label='Aujourd\'hui')
-
+    ax.axvline(x=last_date, color='red', linestyle=':', label="Aujourd'hui")
     ax.set_xlabel("Date")
     ax.set_ylabel("Ventes prévues")
     ax.legend()
@@ -185,7 +161,6 @@ elif vue == "Prévision future":
     daily_pred['Jour'] = range(1, len(daily_pred) + 1)
     daily_pred['date'] = daily_pred['date'].dt.strftime('%Y-%m-%d')
 
-    # Tableau avec couleur rouge si pic
     moyenne_prev = daily_pred['prediction'].mean()
     def couleur_pic(ligne):
         couleur = "background-color: #ffd6d6" if ligne['Prévision ventes totales'] > moyenne_prev * 1.2 else ""
@@ -196,7 +171,6 @@ elif vue == "Prévision future":
     ).round(0)
     st.dataframe(df_affichage.style.apply(couleur_pic, axis=1), use_container_width=True)
 
-    # Top 10 produits à commander en priorité
     st.subheader("Top 10 produits à commander en priorité")
     top10 = (
         df_pred.groupby('item_id')['prediction']
@@ -209,7 +183,6 @@ elif vue == "Prévision future":
     top10['Prévision totale sur la période'] = top10['Prévision totale sur la période'].round(0)
     st.dataframe(top10)
 
-    # Détail par produit
     st.subheader("Prévision par produit")
     produit_choisi = st.selectbox("Choisir un produit", sorted(df_pred['item_id'].unique()))
     prod_pred      = df_pred[df_pred['item_id'] == produit_choisi].copy()
@@ -231,15 +204,14 @@ elif vue == "Prévision future":
 
 # VUE 3 : MAE PAR MAGASIN
 elif vue == "MAE par magasin":
-    st.subheader("MAE par magasin — plus c'est bas mieux c'est prédit")
+    st.subheader("MAE par magasin : plus c'est bas mieux c'est prédit")
 
     df_mae         = mae_par_magasin.reset_index()
     df_mae.columns = ['Magasin', 'MAE']
     df_mae         = df_mae.sort_values('MAE')
 
-    # Métriques en haut
     c1, c2 = st.columns(2)
-    c1.metric(f"MAE pour {store}",  f"{mae_par_magasin[store]}")
+    c1.metric(f"MAE pour {store}",       f"{mae_par_magasin[store]}")
     c2.metric("MAE moyen tous magasins", f"{mae_par_magasin.mean():.3f}")
 
     fig, ax = plt.subplots(figsize=(10, 4))
@@ -251,15 +223,14 @@ elif vue == "MAE par magasin":
 
 # VUE 4 : ALERTES ÉVÉNEMENTS
 elif vue == "Alertes événements":
-    st.subheader("Événements à venir — mai/juin 2016")
+    st.subheader("Événements à venir : mai/juin 2016")
 
     store_recent        = df_long[df_long['store_id'] == store].copy()
     daily_recent        = store_recent.groupby('date')['sales'].sum()
     moyenne_journaliere = daily_recent.mean()
 
-    # Métriques en haut
     c1, c2 = st.columns(2)
-    c1.metric("Ventes moyennes / jour", f"{moyenne_journaliere:.0f}")
+    c1.metric("Ventes moyennes / jour",      f"{moyenne_journaliere:.0f}")
     c2.metric("Nombre d'événements à venir", "2")
 
     events = {
@@ -270,7 +241,7 @@ elif vue == "Alertes événements":
                 "TX_1": 29,  "TX_2": 22,  "TX_3": 25,
                 "WI_1": -25, "WI_2": -35, "WI_3": -33
             },
-            "action": "Vérifier le comportement historique — impact très variable selon le magasin"
+            "action": "Vérifier le comportement historique - impact très variable selon le magasin"
         },
         "Father's day": {
             "date"  : "2016-06-19",
@@ -289,21 +260,21 @@ elif vue == "Alertes événements":
 
         if impact_pct > 0:
             st.success(
-                f"**{event}** le {info['date']} --> "
+                f"**{event}** le {info['date']} - "
                 f"Hausse prévue pour {store} : **+{impact_pct}%** "
                 f"soit environ **+{unites_supplementaires} unités** ce jour-là"
             )
             st.info(
-                f"Recommandation : {info['action']} --> "
+                f"Recommandation : {info['action']} - "
                 f"Commander environ **{unites_supplementaires} unités supplémentaires**"
             )
         else:
             st.error(
-                f"**{event}** le {info['date']} --> "
+                f"**{event}** le {info['date']} - "
                 f"Baisse prévue pour {store} : **{impact_pct}%** "
                 f"soit environ **-{unites_supplementaires} unités** ce jour-là"
             )
             st.info(
-                f"Recommandation : Ne pas sur-stocker --> "
+                f"Recommandation : Ne pas sur-stocker - "
                 f"Réduire les commandes d'environ **{unites_supplementaires} unités**"
             )
