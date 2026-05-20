@@ -52,9 +52,16 @@ st.caption(f"Dernière date disponible dans le dataset : {derniers_28['date'].il
 
 # Courbe de l'historique des ventes
 st.subheader("Historique de demande")
+
+# Métriques 
+c1, c2, c3 = st.columns(3)
+c1.metric("Ventes moyennes / jour", f"{daily['sales'].mean():.0f}")
+c2.metric("Maximum historique",     f"{daily['sales'].max():.0f}")
+c3.metric("Minimum historique",     f"{daily['sales'].min():.0f}")
+
 fig, ax = plt.subplots(figsize=(15, 5))
 ax.plot(daily["date"], daily["sales"].rolling(7).mean(), color="black") # affichage lissé sur 7 jours pour etre plus lisible
-ax.set_title("Ventes globales dans le temps")
+ax.set_title("Ventes globales dans le temps (moyenne lissée 7 jours)")
 ax.set_xlabel("Date")
 ax.set_ylabel("Ventes")
 
@@ -111,16 +118,23 @@ for i in range(horizon):
 future_df = pd.DataFrame(rows)
 X_pred = future_df[features]
 pred_ventes = np.array(historique[-horizon:])
-
-forecast = pd.DataFrame({
-    "Jour futur": np.arange(1, horizon + 1),
-    "Prévision ventes": pred_ventes
-})
+pred_class   = modele_classification.predict(X_pred)
+# ajout car le premier jour est considéré normal alors qu'il dépasse le seuil
+pred_class = np.where(pred_ventes >= seuil_pic, 1, pred_class)
 
 future_dates = pd.date_range(
     start=derniers_28["date"].iloc[-1] + pd.Timedelta(days=1),
     periods=horizon
 )
+
+# Debug pour la mauvaise classification du jour 1
+#st.write(f"Jour 1 : {pred_ventes[0]:.0f} / Seuil : {seuil_pic}")
+#st.write(X_pred.iloc[0])
+
+c1, c2, c3 = st.columns(3)
+c1.metric("Prévision moyenne / jour", f"{pred_ventes.mean():.0f}")
+c2.metric("Pic prévu max",            f"{pred_ventes.max():.0f}")
+c3.metric("Jours à risque de pic",    f"{pred_class.sum()}")
 
 fig2, ax2 = plt.subplots(figsize=(15,5))
 
@@ -160,8 +174,6 @@ st.pyplot(fig2)
 
 st.subheader("Détection du risque de pic")
 
-pred_class = modele_classification.predict(X_pred)
-
 nb_pic = np.sum(pred_class)
 
 st.write("Seuil pris en compte :", seuil_pic)
@@ -178,4 +190,15 @@ else:
 
 st.subheader(f"Prévision des {horizon} prochains jours dans le détail")
 
-st.dataframe(forecast) # Tableau forecast
+forecast = pd.DataFrame({
+    "Jour futur": np.arange(1, horizon + 1),
+    "Date": future_dates.strftime("%Y-%m-%d"),
+    "Prévision ventes": pred_ventes.round(0),
+    "Risque de pic": ["Pic" if c==1 else "Normal" for c in pred_class]
+})
+
+def couleurpic(ligne):
+    couleur = "background-color: #ffd6d6" if ligne["Risque de pic"]=="Pic" else ""
+    return [couleur]*len(ligne)
+
+st.dataframe(forecast.style.apply(couleurpic, axis=1), use_container_width=True) # Tableau forecast
