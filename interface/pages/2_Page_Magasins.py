@@ -7,13 +7,11 @@ import joblib
 st.set_page_config(page_title="Dashboard Supply Chain", layout="wide")
 st.title("Page Performance par Magasin")
 
-# Chargement des prédictions calculées dans le notebook de modélisation
 def load_data():
     test = pd.read_csv('../notebooks/Modeles/Magasins/test_predictions_magasins.csv')
     test['date'] = pd.to_datetime(test['date'])
     return test
 
-# Chargement du modèle XGBoost et de tous les fichiers exportés depuis le notebook
 def load_model():
     model           = joblib.load('../notebooks/Modeles/Magasins/modele_xgboost_magasins.pkl')
     features        = joblib.load('../notebooks/Modeles/Magasins/features_magasins.pkl')
@@ -26,25 +24,29 @@ def load_model():
 test                                                      = load_data()
 model, features, mae_global, mae_par_magasin, df_long, le = load_model()
 
-# Sidebar : filtres pour choisir le magasin et l'horizon de prévision
 st.sidebar.header("Filtres")
 store_list = sorted(test['store_id'].unique())
 store      = st.sidebar.selectbox("Choisir un magasin", store_list)
 horizon    = st.sidebar.selectbox("Horizon de prévision (jours)", [7, 14, 28])
 
-# Navigation entre les 4 vues disponibles
+st.caption(f"Dernière date disponible dans le dataset : {test['date'].max().date()}")
+
 vue = st.radio(
     "Que voulez-vous analyser ?",
     ["Ventes réelles vs prédites", "Prévision future", "MAE par magasin", "Alertes événements"]
 )
 
 # VUE 1 : RÉEL VS PRÉDIT
-# Permet de valider visuellement la qualité du modèle sur la période de test
 if vue == "Ventes réelles vs prédites":
     st.subheader(f"Ventes réelles vs prédites — {store}")
 
-    # Agrégation par date : on somme tous les produits pour avoir le total magasin
     store_data = test[test['store_id'] == store].groupby('date')[['sales', 'prediction']].sum().reset_index()
+
+    # Métriques en haut
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Ventes réelles moyennes / jour", f"{store_data['sales'].mean():.0f}")
+    c2.metric("Maximum historique",             f"{store_data['sales'].max():.0f}")
+    c3.metric(f"MAE pour {store}",              f"{mae_par_magasin[store]}")
 
     fig, ax = plt.subplots(figsize=(12, 4))
     ax.plot(store_data['date'], store_data['sales'],      label='Réel',   color='black',     linewidth=2)
@@ -55,9 +57,7 @@ if vue == "Ventes réelles vs prédites":
     ax.grid(True, alpha=0.3)
     st.pyplot(fig)
 
-    st.metric(f"MAE pour {store}", f"{mae_par_magasin[store]}")
-
-    # Détail par produit dans le magasin sélectionné
+    # Détail par produit
     st.subheader(f"Détail par produit — {store}")
     produits = sorted(test[test['store_id'] == store]['item_id'].unique())
     produit  = st.selectbox("Choisir un produit", produits)
@@ -74,8 +74,6 @@ if vue == "Ventes réelles vs prédites":
     st.pyplot(fig2)
 
 # VUE 2 : PRÉVISION FUTURE
-# Prédiction récursive sur les top 50 produits du magasin
-# On prédit jour par jour en utilisant la prédiction précédente comme lag
 elif vue == "Prévision future":
     st.subheader(f"Prévision des {horizon} prochains jours — {store}")
 
@@ -88,7 +86,6 @@ elif vue == "Prévision future":
     store_df  = df_long[df_long['store_id'] == store].copy()
     last_date = store_df['date'].max()
 
-    # On garde uniquement les 50 produits les plus vendus
     top50_produits = (
         store_df.groupby('item_id')['sales']
         .sum()
@@ -98,7 +95,6 @@ elif vue == "Prévision future":
     )
     store_df = store_df[store_df['item_id'].isin(top50_produits)]
 
-    # Barre de progression
     progress = st.progress(0)
     status   = st.empty()
 
@@ -121,7 +117,6 @@ elif vue == "Prévision future":
             last_row['month']     = next_date.month
             last_row['event_enc'] = 0
 
-            # Recalcul des lags depuis les données disponibles
             if len(current) >= 1:
                 last_row['lag_1'] = current['sales'].iloc[-1]
             if len(current) >= 7:
@@ -146,15 +141,41 @@ elif vue == "Prévision future":
     progress.empty()
     status.empty()
 
-    df_pred = pd.DataFrame(all_predictions)
-
-    # Agrégation par jour pour le total des top 50 produits
+    df_pred    = pd.DataFrame(all_predictions)
     daily_pred = df_pred.groupby('date')['prediction'].sum().reset_index()
 
+    # Métriques en haut
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Ventes prévues totales sur la période", f"{daily_pred['prediction'].sum():.0f}")
+    c2.metric("Pic prévu",                             f"{daily_pred['prediction'].max():.0f}")
+    c3.metric("Moyenne prévue / jour",                 f"{daily_pred['prediction'].mean():.0f}")
+
     st.subheader("Total magasin (top 50 produits)")
+
+    # Historique des 28 derniers jours + prévisions sur le même graphe
+    store_hist = df_long[df_long['store_id'] == store].copy()
+    store_hist = store_hist[store_hist['item_id'].isin(top50_produits)]
+    hist_28    = store_hist.groupby('date')['sales'].sum().reset_index().tail(28)
+
     fig, ax = plt.subplots(figsize=(12, 4))
+
+    # Historique
+    ax.plot(hist_28['date'], hist_28['sales'],
+            label='Historique', color='black', linewidth=2)
+
+    # Prévisions
     ax.plot(daily_pred['date'], daily_pred['prediction'],
-            marker='o', color='steelblue', linewidth=2, label='Prévision')
+            marker='o', color='steelblue', linewidth=2, label='Prévision', linestyle='--')
+
+    # Intervalle de confiance qui s'élargit avec le temps
+    rmse_total = mae_global * 50
+    haut = daily_pred['prediction'] + rmse_total * np.sqrt(np.arange(1, len(daily_pred) + 1))
+    bas  = (daily_pred['prediction'] - rmse_total * np.sqrt(np.arange(1, len(daily_pred) + 1))).clip(0)
+    ax.fill_between(daily_pred['date'], bas, haut, alpha=0.2, label='Intervalle de confiance')
+
+    # Ligne de séparation passé / futur
+    ax.axvline(x=last_date, color='red', linestyle=':', label='Aujourd\'hui')
+
     ax.set_xlabel("Date")
     ax.set_ylabel("Ventes prévues")
     ax.legend()
@@ -163,9 +184,17 @@ elif vue == "Prévision future":
 
     daily_pred['Jour'] = range(1, len(daily_pred) + 1)
     daily_pred['date'] = daily_pred['date'].dt.strftime('%Y-%m-%d')
-    st.dataframe(daily_pred[['Jour', 'date', 'prediction']].rename(
+
+    # Tableau avec couleur rouge si pic
+    moyenne_prev = daily_pred['prediction'].mean()
+    def couleur_pic(ligne):
+        couleur = "background-color: #ffd6d6" if ligne['Prévision ventes totales'] > moyenne_prev * 1.2 else ""
+        return [couleur] * len(ligne)
+
+    df_affichage = daily_pred[['Jour', 'date', 'prediction']].rename(
         columns={'date': 'Date', 'prediction': 'Prévision ventes totales'}
-    ).round(0))
+    ).round(0)
+    st.dataframe(df_affichage.style.apply(couleur_pic, axis=1), use_container_width=True)
 
     # Top 10 produits à commander en priorité
     st.subheader("Top 10 produits à commander en priorité")
@@ -201,36 +230,38 @@ elif vue == "Prévision future":
     ).round(0))
 
 # VUE 3 : MAE PAR MAGASIN
-# Compare la précision du modèle entre tous les magasins
 elif vue == "MAE par magasin":
-    st.subheader("MAE par magasin ( bonne prédiction si bas )")
+    st.subheader("MAE par magasin — plus c'est bas mieux c'est prédit")
 
     df_mae         = mae_par_magasin.reset_index()
     df_mae.columns = ['Magasin', 'MAE']
     df_mae         = df_mae.sort_values('MAE')
 
+    # Métriques en haut
+    c1, c2 = st.columns(2)
+    c1.metric(f"MAE pour {store}",  f"{mae_par_magasin[store]}")
+    c2.metric("MAE moyen tous magasins", f"{mae_par_magasin.mean():.3f}")
+
     fig, ax = plt.subplots(figsize=(10, 4))
-    # Rouge pour le magasin sélectionné, bleu pour les autres
     colors  = ['red' if s == store else 'steelblue' for s in df_mae['Magasin']]
     ax.bar(df_mae['Magasin'], df_mae['MAE'], color=colors, edgecolor='black')
     ax.set_ylabel("MAE")
     ax.set_title("MAE par magasin (rouge = magasin sélectionné)")
     st.pyplot(fig)
 
-    st.metric(f"MAE pour {store}", f"{mae_par_magasin[store]}")
-
 # VUE 4 : ALERTES ÉVÉNEMENTS
-# Impacts calculés depuis l'exploration des données
-# Vert = hausse des ventes, Rouge = baisse des ventes
 elif vue == "Alertes événements":
-    st.subheader("Événements à venir - mai/juin 2016")
+    st.subheader("Événements à venir — mai/juin 2016")
 
-    # Moyenne des ventes journalières du magasin
     store_recent        = df_long[df_long['store_id'] == store].copy()
     daily_recent        = store_recent.groupby('date')['sales'].sum()
     moyenne_journaliere = daily_recent.mean()
 
-    # Impacts par magasin issus de l'exploration des données
+    # Métriques en haut
+    c1, c2 = st.columns(2)
+    c1.metric("Ventes moyennes / jour", f"{moyenne_journaliere:.0f}")
+    c2.metric("Nombre d'événements à venir", "2")
+
     events = {
         "MemorialDay": {
             "date"  : "2016-05-30",
@@ -239,7 +270,7 @@ elif vue == "Alertes événements":
                 "TX_1": 29,  "TX_2": 22,  "TX_3": 25,
                 "WI_1": -25, "WI_2": -35, "WI_3": -33
             },
-            "action": "Vérifier le comportement historique - impact très variable selon le magasin"
+            "action": "Vérifier le comportement historique — impact très variable selon le magasin"
         },
         "Father's day": {
             "date"  : "2016-06-19",
@@ -253,22 +284,22 @@ elif vue == "Alertes événements":
     }
 
     for event, info in events.items():
-        impact_pct = info['impact'].get(store, 0)
+        impact_pct             = info['impact'].get(store, 0)
         unites_supplementaires = int(moyenne_journaliere * abs(impact_pct) / 100)
 
         if impact_pct > 0:
             st.success(
-                f"**{event}** le {info['date']} → "
+                f"**{event}** le {info['date']} --> "
                 f"Hausse prévue pour {store} : **+{impact_pct}%** "
                 f"soit environ **+{unites_supplementaires} unités** ce jour-là"
             )
             st.info(
-                f"Recommandation : {info['action']} — "
+                f"Recommandation : {info['action']} --> "
                 f"Commander environ **{unites_supplementaires} unités supplémentaires**"
             )
         else:
             st.error(
-                f"**{event}** le {info['date']} : "
+                f"**{event}** le {info['date']} --> "
                 f"Baisse prévue pour {store} : **{impact_pct}%** "
                 f"soit environ **-{unites_supplementaires} unités** ce jour-là"
             )
