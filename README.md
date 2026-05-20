@@ -99,6 +99,14 @@ Le dataset étant trop lourd, nous l'avons chacune enregistré en local dans nos
 Les fichiers nécessaires au lancement de l'application (.pkl et .csv) sont néanmoins enregistrés dans le repository avec les notebooks correspondants, pour que l'application puisse tourner sans relancer les modèles.
 
 
+## Installation
+1. Cloner le dépôt
+2. Télécharger le dataset (chemin : OptimisationPredictive_ChaineLogistique/datas)
+3. Installer les dépendances :
+```bash
+   pip install -r requirements.txt
+```
+
 ## Lancer l'application
 ```bash
 cd interface
