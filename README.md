@@ -63,6 +63,7 @@ Alessandro LEITE
 |    |    |-- 3_Page_Produits.py
 |
 |-- README.md
+|-- requirements.txt
 ```
 
 
